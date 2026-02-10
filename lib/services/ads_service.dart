@@ -1,6 +1,15 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'storage_service.dart';
+
+/// IDs de teste AdMob: Android e iOS usam sufixos diferentes.
+String get _bannerAdUnitId =>
+    Platform.isIOS ? 'ca-app-pub-3940256099942544/2934735716' : 'ca-app-pub-3940256099942544/6300978111';
+String get _interstitialAdUnitId =>
+    Platform.isIOS ? 'ca-app-pub-3940256099942544/4411468910' : 'ca-app-pub-3940256099942544/1033173712';
+String get _rewardedAdUnitId =>
+    Platform.isIOS ? 'ca-app-pub-3940256099942544/1712485313' : 'ca-app-pub-3940256099942544/5224354917';
 
 /// Serviço de anúncios. Banner, intersticial e rewarded (vídeo para ganhar recompensa).
 /// Respeita premium e compra única "remover anúncios".
@@ -30,7 +39,7 @@ class AdsService {
     if (!_showAds) return null;
     // IDs de teste do AdMob. Trocar pelos reais em produção.
     _bannerAd = BannerAd(
-      adUnitId: 'ca-app-pub-3940256099942544/6300978111',
+      adUnitId: _bannerAdUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
@@ -44,7 +53,7 @@ class AdsService {
   void loadInterstitial() {
     if (!_showAds) return;
     InterstitialAd.load(
-      adUnitId: 'ca-app-pub-3940256099942544/1033173712',
+      adUnitId: _interstitialAdUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) => _interstitialAd = ad,
@@ -56,7 +65,7 @@ class AdsService {
   void loadRewardedAd() {
     if (!_showAds) return;
     RewardedAd.load(
-      adUnitId: 'ca-app-pub-3940256099942544/5224354917',
+      adUnitId: _rewardedAdUnitId,
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) => _rewardedAd = ad,

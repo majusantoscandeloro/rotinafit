@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_version.dart';
 import 'home_screen.dart';
 
 /// Tela inicial de teste (apenas em debug) para simular cada tipo de usuário:
@@ -22,6 +23,14 @@ class DebugUserModeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Text(
+                'Versão $appVersion',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
               Text(
                 'Selecione o tipo de usuário para testar',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(

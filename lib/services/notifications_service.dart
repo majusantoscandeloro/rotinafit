@@ -12,6 +12,13 @@ class NotificationsService {
 
   static bool _initialized = false;
 
+  /// Detalhes para notificações agendadas no iOS (alert, som, badge).
+  static const DarwinNotificationDetails _iosDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentSound: true,
+    presentBadge: true,
+  );
+
   static Future<void> init() async {
     if (_initialized) return;
     tz_data.initializeTimeZones();
@@ -77,6 +84,7 @@ class NotificationsService {
             'Lembretes de água',
             channelDescription: 'Horários para beber água',
           ),
+          iOS: _iosDetails,
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -110,6 +118,7 @@ class NotificationsService {
           'Refeições',
           channelDescription: 'Lembretes de café, almoço, lanche, jantar, ceia',
         ),
+        iOS: _iosDetails,
       ),
       androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
@@ -142,6 +151,7 @@ class NotificationsService {
             'Atividade física',
             channelDescription: 'Lembrete de exercícios',
           ),
+          iOS: _iosDetails,
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -178,6 +188,7 @@ class NotificationsService {
             'Atividade física',
             channelDescription: 'Lembrete de exercícios',
           ),
+          iOS: _iosDetails,
         ),
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
@@ -225,6 +236,7 @@ class NotificationsService {
               'Lembretes personalizados',
               channelDescription: 'Lembretes criados por você',
             ),
+            iOS: _iosDetails,
           ),
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           uiLocalNotificationDateInterpretation:
