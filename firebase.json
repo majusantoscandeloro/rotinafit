@@ -1,0 +1,25 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "rotinafit-69e71",
+          "appId": "1:16511170615:android:a6af8439f4342447abe7b2",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "rotinafit-69e71",
+          "configurations": {
+            "android": "1:16511170615:android:a6af8439f4342447abe7b2",
+            "ios": "1:16511170615:ios:a46a1d1d15f57e64abe7b2"
+          }
+        }
+      }
+    }
+  }
+}

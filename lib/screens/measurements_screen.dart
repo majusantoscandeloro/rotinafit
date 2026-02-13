@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/app_provider.dart';
 import '../models/body_measurements.dart';
+import 'results_screen.dart';
 
 class MeasurementsScreen extends StatefulWidget {
   const MeasurementsScreen({super.key});
@@ -68,6 +69,66 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
     return double.tryParse(s.replaceAll(',', '.'));
   }
 
+  Future<void> _onCalcularGordura(BuildContext context) async {
+    final app = context.read<AppProvider>();
+    if (app.canViewBodyFatWithoutAd) {
+      setState(() => _hasCalculatedFat = true);
+      return;
+    }
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ver percentual de gordura'),
+        content: const Text(
+          'Assista a um vídeo para ver o percentual e a categoria (ex: normal, acima do normal) e desbloquear por 24h, ou use Premium para ver sempre.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'cancel'),
+            child: const Text('Cancelar'),
+          ),
+          OutlinedButton(
+            onPressed: () => Navigator.pop(ctx, 'premium'),
+            child: const Text('Assinar Premium'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, 'video'),
+            child: const Text('Assistir vídeo e liberar'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || choice == null || choice == 'cancel') return;
+    if (choice == 'premium') {
+      if (app.isPremium) {
+        setState(() => _hasCalculatedFat = true);
+        return;
+      }
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const PremiumScreen()),
+      );
+      if (!mounted) return;
+      if (context.read<AppProvider>().isPremium) {
+        setState(() => _hasCalculatedFat = true);
+      }
+      return;
+    }
+    if (choice == 'video') {
+      final earned = await app.showRewardedAd(forBodyFat: true);
+      if (!mounted) return;
+      if (!earned) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Assista o vídeo até o fim para liberar.')),
+        );
+        return;
+      }
+      await app.unlockBodyFatFor24Hours();
+      if (mounted) setState(() => _hasCalculatedFat = true);
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final app = context.read<AppProvider>();
@@ -90,7 +151,6 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
       isMale: _isMale,
     );
     await app.saveMeasurements(m);
-    await app.showInterstitialOnSave();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Check-in do mês salvo!')),
@@ -168,10 +228,7 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
-              onPressed: () async {
-                await context.read<AppProvider>().showInterstitial();
-                if (mounted) setState(() => _hasCalculatedFat = true);
-              },
+              onPressed: () => _onCalcularGordura(context),
               icon: const Icon(Icons.calculate),
               label: const Text('Calcular % gordura'),
             ),
@@ -323,6 +380,13 @@ double? _parse(String? s) {
   return double.tryParse(s.replaceAll(',', '.'));
 }
 
+String _bodyFatCategory(double fat) {
+  if (fat < 10) return 'Muito baixo';
+  if (fat < 18) return 'Normal';
+  if (fat < 25) return 'Acima do normal';
+  return 'Elevado';
+}
+
 class _BodyFatCard extends StatelessWidget {
   const _BodyFatCard({
     required this.showResult,
@@ -420,6 +484,14 @@ class _BodyFatCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
+            Text(
+              _bodyFatCategory(fat),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 2),
             Text(
               'Fórmula US Navy – ${isMale == true ? "Homens" : "Mulheres"}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(

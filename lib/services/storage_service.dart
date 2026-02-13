@@ -11,8 +11,10 @@ class StorageService {
   static const _keyCustomReminders = 'rotinafit_custom_reminders';
   static const _keyWater = 'rotinafit_water';
   static const _keyPremium = 'rotinafit_premium';
-  static const _keyAdsRemoved = 'rotinafit_ads_removed';
   static const _keyImcFreeViewedMonth = 'rotinafit_imc_free_viewed_month';
+  static const _keyBodyFatUnlockedUntil = 'rotinafit_body_fat_unlocked_until';
+  static const _keyWaterGoalChangeDate = 'rotinafit_water_goal_change_date';
+  static const _keyWaterGoalChangeCount = 'rotinafit_water_goal_change_count';
 
   Future<List<BodyMeasurements>> getMeasurements() async {
     final prefs = await SharedPreferences.getInstance();
@@ -88,16 +90,6 @@ class StorageService {
     await prefs.setBool(_keyPremium, value);
   }
 
-  Future<bool> isAdsRemoved() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyAdsRemoved) ?? false;
-  }
-
-  Future<void> setAdsRemoved(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyAdsRemoved, value);
-  }
-
   Future<String?> getImcFreeViewedMonth() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_keyImcFreeViewedMonth);
@@ -106,5 +98,31 @@ class StorageService {
   Future<void> setImcFreeViewedMonth(String monthKey) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyImcFreeViewedMonth, monthKey);
+  }
+
+  Future<String?> getBodyFatUnlockedUntil() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyBodyFatUnlockedUntil);
+  }
+
+  Future<void> setBodyFatUnlockedUntil(String isoDateTime) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyBodyFatUnlockedUntil, isoDateTime);
+  }
+
+  Future<String?> getWaterGoalChangeDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_keyWaterGoalChangeDate);
+  }
+
+  Future<int> getWaterGoalChangeCount() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyWaterGoalChangeCount) ?? 0;
+  }
+
+  Future<void> setWaterGoalChangeForToday(String dateKey, int count) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyWaterGoalChangeDate, dateKey);
+    await prefs.setInt(_keyWaterGoalChangeCount, count);
   }
 }

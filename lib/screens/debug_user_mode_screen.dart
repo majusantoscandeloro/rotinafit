@@ -6,7 +6,7 @@ import '../utils/app_version.dart';
 import 'home_screen.dart';
 
 /// Tela inicial de teste (apenas em debug) para simular cada tipo de usuário:
-/// Free com anúncios, Free sem anúncios, Premium.
+/// Free (com anúncios) ou Premium.
 class DebugUserModeScreen extends StatelessWidget {
   const DebugUserModeScreen({super.key});
 
@@ -44,24 +44,16 @@ class DebugUserModeScreen extends StatelessWidget {
                 subtitle:
                     'Anúncios visíveis, 1 lembrete personalizado (com vídeo), IMC 1x/mês, sem histórico completo',
                 icon: Icons.sell_outlined,
-                onTap: () => _selectMode(context, premium: false, adsRemoved: false),
-              ),
-              const SizedBox(height: 12),
-              _ModeCard(
-                title: 'Free (sem anúncios)',
-                subtitle:
-                    'Sem anúncios (compra única). Sem histórico mês a mês e gráficos.',
-                icon: Icons.block_outlined,
-                onTap: () => _selectMode(context, premium: false, adsRemoved: true),
+                onTap: () => _selectMode(context, premium: false),
               ),
               const SizedBox(height: 12),
               _ModeCard(
                 title: 'Premium',
                 subtitle:
-                    'Sem anúncios + histórico completo, gráficos e comparação mês a mês.',
+                    'Sem anúncios, histórico completo, gráficos e comparação mês a mês. R\$ 5,90/mês ou R\$ 49,90/ano.',
                 icon: Icons.star,
                 color: AppTheme.lockPremium,
-                onTap: () => _selectMode(context, premium: true, adsRemoved: false),
+                onTap: () => _selectMode(context, premium: true),
               ),
             ],
           ),
@@ -70,14 +62,9 @@ class DebugUserModeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _selectMode(
-    BuildContext context, {
-    required bool premium,
-    required bool adsRemoved,
-  }) async {
+  Future<void> _selectMode(BuildContext context, {required bool premium}) async {
     final app = context.read<AppProvider>();
     await app.setPremium(premium);
-    await app.setAdsRemoved(adsRemoved);
     if (!context.mounted) return;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(

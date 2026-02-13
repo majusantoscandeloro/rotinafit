@@ -50,9 +50,21 @@
 	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Login com Google: substitua pelo REVERSED_CLIENT_ID do GoogleService-Info.plist -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>REVERSED_CLIENT_ID</string>
+			</array>
+		</dict>
+	</array>
 	<!-- Google Mobile Ads (AdMob) - obrigatório para iOS -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-7050795334686713~5425483690</string>
 	<!-- SKAdNetwork (conversão/attribution) - necessário para anúncios no iOS -->
 	<key>SKAdNetworkItems</key>
 	<array>

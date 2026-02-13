@@ -65,6 +65,12 @@ class _MealsScreenState extends State<MealsScreen> {
         minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0,
       ),
       initialEntryMode: TimePickerEntryMode.inputOnly,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
     if (time != null) {
       final s =

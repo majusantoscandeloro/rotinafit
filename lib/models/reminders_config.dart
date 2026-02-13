@@ -1,9 +1,12 @@
 /// Configuração de lembretes: água, alimentação, atividade.
 /// Refeições: Café, Almoço, Lanche, Jantar, Ceia.
 class RemindersConfig {
+  /// 10 horários a partir das 7h, 200 ml cada = 2 L/dia.
   RemindersConfig({
     this.notificationsEnabled = true,
-    this.waterTimes = const ['09:00', '11:00', '14:00', '17:00', '20:00'],
+    this.waterTimes = const [
+      '07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30',
+    ],
     this.mealBreakfast,
     this.mealLunch,
     this.mealSnack,
@@ -50,7 +53,9 @@ class RemindersConfig {
       waterTimes: (json['waterTimes'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
-          ['09:00', '11:00', '14:00', '17:00', '20:00'],
+          const [
+            '07:00', '08:30', '10:00', '11:30', '13:00', '14:30', '16:00', '17:30', '19:00', '20:30',
+          ],
       mealBreakfast: json['mealBreakfast'] as String?,
       mealLunch: json['mealLunch'] as String?,
       mealSnack: json['mealSnack'] as String?,

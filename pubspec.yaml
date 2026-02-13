@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   cupertino_icons: ^1.0.6
   google_fonts: ^6.2.1
   provider: ^6.1.1
@@ -18,13 +20,32 @@ dependencies:
   google_mobile_ads: ^4.0.0
   in_app_purchase: ^3.1.13
   fl_chart: ^0.66.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   collection: ^1.18.0
+  # Firebase (Auth + Firestore)
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.1
+  google_sign_in: ^6.2.2
+  font_awesome_flutter: ^10.7.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
+  flutter_launcher_icons: ^0.14.3
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icon/
+
+# Ícone do app (launcher) = rotinafitsemicone.png. Logo nas telas = icon.png.
+# Para regenerar ícones: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/rotinafitsemicone.png"
+  adaptive_icon_background: "#0EA5E9"
+  adaptive_icon_foreground: "assets/icon/rotinafitsemicone.png"
+  remove_alpha_ios: true

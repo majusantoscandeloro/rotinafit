@@ -1052,7 +1052,21 @@ class PremiumScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RotinaFit Premium')),
+      appBar: AppBar(
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/icon/icon.png',
+              height: 28,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+            const SizedBox(width: 8),
+            const Text('RotinaFit Premium'),
+          ],
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -1066,14 +1080,22 @@ class PremiumScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.star, color: AppTheme.lockPremium, size: 40),
                       const SizedBox(width: 12),
-                      Text(
-                        'Premium (assinatura)',
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Expanded(
+                        child: Text(
+                          'O que é o Premium?',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text('• Sem anúncios\n• Histórico mês a mês ilimitado\n• Comparação automática (ex: Cintura -2 cm)\n• Gráficos e evolução\n• Backup (em breve)'),
+                  const Text(
+                    'O RotinaFit tem dois planos:\n\n'
+                    '• Free (grátis): uso completo dos lembretes, água, medidas e IMC, com anúncios. '
+                    'Histórico e gráficos têm preview limitado.\n\n'
+                    '• Premium (assinatura): sem anúncios e com tudo liberado — histórico mês a mês ilimitado, '
+                    'comparação automática (ex: Cintura -2 cm), gráficos de evolução e percentual de gordura sempre visível.',
+                  ),
                 ],
               ),
             ),
@@ -1086,32 +1108,23 @@ class PremiumScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Remoção de anúncios (pagamento único)',
+                    'Valor',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  const Text('Remove apenas os anúncios. O histórico mês a mês continua no Premium.'),
-                  const SizedBox(height: 12),
+                  const Text('R\$ 5,90 por mês ou R\$ 49,90 por ano (melhor custo-benefício).'),
+                  const SizedBox(height: 16),
                   OutlinedButton(
                     onPressed: () {
-                      // TODO: in_app_purchase - compra única
-                      context.read<AppProvider>().setAdsRemoved(true);
+                      // TODO: in_app_purchase - assinatura
+                      context.read<AppProvider>().setPremium(true);
                       Navigator.pop(context);
                     },
-                    child: const Text('Remover anúncios (simulado)'),
+                    child: const Text('Ativar Premium (simulado)'),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: () {
-              // TODO: in_app_purchase - assinatura
-              context.read<AppProvider>().setPremium(true);
-              Navigator.pop(context);
-            },
-            child: const Text('Ativar Premium (simulado)'),
           ),
         ],
       ),

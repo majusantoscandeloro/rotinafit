@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/home_card.dart';
 import 'debug_user_mode_screen.dart';
@@ -23,7 +24,19 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('RotinaFit'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              'assets/icon/icon.png',
+              height: 32,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+            const SizedBox(width: 10),
+            const Text('RotinaFit'),
+          ],
+        ),
         actions: [
           if (kDebugMode)
             IconButton(
@@ -44,6 +57,11 @@ class HomeScreen extends StatelessWidget {
                 builder: (context) => const RemindersScreen(),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Sair',
+            onPressed: () => context.read<AuthProvider>().signOut(),
           ),
         ],
       ),
@@ -72,151 +90,162 @@ class HomeScreen extends StatelessWidget {
               : 0.0;
           final current = app.getCurrentMonthMeasurements();
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Olá!',
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.colorScheme.onSurface,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Sua rotina em um só lugar',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    const SizedBox(height: 16),
-                    HomeCard(
-                      emoji: '💧',
-                      icon: Icons.water_drop_rounded,
-                      title: 'Água',
-                      subtitle: 'Meta do dia (copo = 200 ml)',
-                      progress: waterProgress,
-                      progressLabel:
-                          '${water.currentGlasses}/${water.goalGlasses} copos · ${_formatL(water.currentMl)} / ${_formatL(water.goalMl)}',
-                      accentColor: const Color(0xFF0EA5E9),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const WaterScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    HomeCard(
-                      emoji: '🍽️',
-                      icon: Icons.restaurant_rounded,
-                      title: 'Alimentação',
-                      subtitle: app.reminders.mealBreakfast != null ||
-                              app.reminders.mealLunch != null ||
-                              app.reminders.mealSnack != null ||
-                              app.reminders.mealDinner != null ||
-                              app.reminders.mealSupper != null
-                          ? 'Lembretes ativos'
-                          : 'Configurar lembretes',
-                      accentColor: const Color(0xFFF59E0B),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const MealsScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    HomeCard(
-                      emoji: '🏃',
-                      icon: Icons.directions_run_rounded,
-                      title: 'Atividade física',
-                      subtitle: (app.reminders.useSingleActivityTime
-                              ? app.reminders.activityDays.isNotEmpty
-                              : app.reminders.activityTimesByDay.isNotEmpty)
-                          ? 'Lembretes ativos'
-                          : 'Configurar lembretes',
-                      accentColor: AppTheme.primary,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ActivityScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    HomeCard(
-                      emoji: '🔔',
-                      icon: Icons.notifications_active_rounded,
-                      title: 'Lembretes personalizados',
-                      subtitle: app.customReminders.isEmpty
-                          ? 'Criar lembrete (ex: Tomar creatina 5g)'
-                          : '${app.customReminders.length} lembrete(s)',
-                      accentColor: const Color(0xFF8B5CF6),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const CustomRemindersScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    HomeCard(
-                      emoji: '📏',
-                      icon: Icons.straighten_rounded,
-                      title: 'Medidas',
-                      subtitle: current != null
-                          ? 'Cintura, quadril, braço...'
-                          : 'Registrar medidas',
-                      accentColor: const Color(0xFF10B981),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MeasurementsScreen(),
+          return Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Olá!',
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: theme.colorScheme.onSurface,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Sua rotina em um só lugar',
+                              style: theme.textTheme.bodyLarge?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    HomeCard(
-                      emoji: '📊',
-                      icon: Icons.analytics_rounded,
-                      title: 'Resultados',
-                      subtitle: current != null
-                          ? 'Ver evolução, comparar meses e gráficos'
-                          : 'Registre medidas para ver resultados',
-                      accentColor: const Color(0xFF6366F1),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ResultsScreen()),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    if (app.showAds)
-                      Container(
-                        height: 50,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          'Anúncio',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const SizedBox(height: 16),
+                          HomeCard(
+                            emoji: '💧',
+                            icon: Icons.water_drop_rounded,
+                            title: 'Água',
+                            subtitle: 'Meta do dia (copo = 200 ml)',
+                            progress: waterProgress,
+                            progressLabel:
+                                '${water.currentGlasses}/${water.goalGlasses} copos · ${_formatL(water.currentMl)} / ${_formatL(water.goalMl)}',
+                            accentColor: const Color(0xFF0EA5E9),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const WaterScreen()),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 12),
+                          HomeCard(
+                            emoji: '🍽️',
+                            icon: Icons.restaurant_rounded,
+                            title: 'Alimentação',
+                            subtitle: app.reminders.mealBreakfast != null ||
+                                    app.reminders.mealLunch != null ||
+                                    app.reminders.mealSnack != null ||
+                                    app.reminders.mealDinner != null ||
+                                    app.reminders.mealSupper != null
+                                ? 'Lembretes ativos'
+                                : 'Configurar lembretes',
+                            accentColor: const Color(0xFFF59E0B),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const MealsScreen()),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          HomeCard(
+                            emoji: '🏃',
+                            icon: Icons.directions_run_rounded,
+                            title: 'Atividade física',
+                            subtitle: (app.reminders.useSingleActivityTime
+                                    ? app.reminders.activityDays.isNotEmpty
+                                    : app.reminders.activityTimesByDay.isNotEmpty)
+                                ? 'Lembretes ativos'
+                                : 'Configurar lembretes',
+                            accentColor: AppTheme.primary,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ActivityScreen()),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          HomeCard(
+                            emoji: '🔔',
+                            icon: Icons.notifications_active_rounded,
+                            title: 'Lembretes personalizados',
+                            subtitle: app.customReminders.isEmpty
+                                ? 'Criar lembrete (ex: Tomar creatina 5g)'
+                                : '${app.customReminders.length} lembrete(s)',
+                            accentColor: const Color(0xFF8B5CF6),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const CustomRemindersScreen()),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          HomeCard(
+                            emoji: '📏',
+                            icon: Icons.straighten_rounded,
+                            title: 'Medidas',
+                            subtitle: current != null
+                                ? 'Cintura, quadril, braço...'
+                                : 'Registrar medidas',
+                            accentColor: const Color(0xFF10B981),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const MeasurementsScreen(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          HomeCard(
+                            emoji: '📊',
+                            icon: Icons.analytics_rounded,
+                            title: 'Resultados',
+                            subtitle: current != null
+                                ? 'Ver evolução, comparar meses e gráficos'
+                                : 'Registre medidas para ver resultados',
+                            accentColor: const Color(0xFF6366F1),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ResultsScreen()),
+                            ),
+                          ),
+                          if (!app.isPremium) ...[
+                            const SizedBox(height: 12),
+                            HomeCard(
+                              emoji: '⭐',
+                              icon: Icons.workspace_premium_rounded,
+                              title: 'Conheça o Premium',
+                              subtitle: 'Sem anúncios, histórico completo e gráficos. R\$ 5,90/mês ou R\$ 49,90/ano.',
+                              accentColor: AppTheme.lockPremium,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const PremiumScreen(),
+                                ),
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 24),
+                        ]),
                       ),
-                    const SizedBox(height: 32),
-                  ]),
+                    ),
+                  ],
                 ),
               ),
+              if (app.showAds)
+                SafeArea(
+                  top: false,
+                  child: app.getBannerWidget(),
+                ),
             ],
           );
         },

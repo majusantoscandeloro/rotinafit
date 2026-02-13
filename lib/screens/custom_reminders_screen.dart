@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/custom_reminder.dart';
+import 'results_screen.dart';
 
 class CustomRemindersScreen extends StatelessWidget {
   const CustomRemindersScreen({super.key});
@@ -76,15 +77,52 @@ class CustomRemindersScreen extends StatelessWidget {
       return;
     }
     if (app.mustWatchAdToAddCustomReminder) {
-      final watched = await app.showRewardedAd();
-      if (!context.mounted) return;
-      if (!watched) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Assista ao vídeo até o fim para desbloquear a criação do lembrete.'),
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Criar lembrete personalizado'),
+          content: const Text(
+            'No plano gratuito você pode assistir a um vídeo para criar o lembrete ou assinar o Premium para criar quantos quiser.',
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'cancel'),
+              child: const Text('Cancelar'),
+            ),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(ctx, 'premium'),
+              child: const Text('Assinar Premium'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, 'video'),
+              child: const Text('Assistir vídeo e ganhar'),
+            ),
+          ],
+        ),
+      );
+      if (!context.mounted || choice == null || choice == 'cancel') return;
+      if (choice == 'premium') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PremiumScreen()),
         );
+        if (!context.mounted) return;
+        if (context.read<AppProvider>().isPremium) {
+          await _showForm(context, reminder: null);
+        }
         return;
+      }
+      if (choice == 'video') {
+        final watched = await app.showRewardedAd(forCustomReminder: true);
+        if (!context.mounted) return;
+        if (!watched) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Assista ao vídeo até o fim para desbloquear a criação do lembrete.'),
+            ),
+          );
+          return;
+        }
       }
     }
     if (!context.mounted) return;
@@ -209,6 +247,12 @@ class _CustomReminderFormDialogState extends State<_CustomReminderFormDialog> {
         minute: int.tryParse(parts.length > 1 ? parts[1] : '50') ?? 50,
       ),
       initialEntryMode: TimePickerEntryMode.inputOnly,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
     );
     if (time != null) {
       setState(() {
