@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../models/reminders_config.dart';
+import '../utils/responsive.dart';
 import 'results_screen.dart';
 
 class WaterScreen extends StatefulWidget {
@@ -247,8 +248,8 @@ class _WaterScreenState extends State<WaterScreen> {
                           ],
                         ),
                         SizedBox(
-                          width: 72,
-                          height: 72,
+                          width: responsiveSize(context, compact: 72, expanded: 96),
+                          height: responsiveSize(context, compact: 72, expanded: 96),
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
@@ -258,7 +259,7 @@ class _WaterScreenState extends State<WaterScreen> {
                                 backgroundColor: _waterAccent.withValues(alpha:0.2),
                                 valueColor: const AlwaysStoppedAnimation<Color>(_waterAccent),
                               ),
-                              const Icon(Icons.water_drop_rounded, size: 28, color: _waterAccent),
+                              Icon(Icons.water_drop_rounded, size: responsiveSize(context, compact: 28, expanded: 36), color: _waterAccent),
                             ],
                           ),
                         ),

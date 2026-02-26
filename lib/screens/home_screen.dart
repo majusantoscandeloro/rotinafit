@@ -1,11 +1,12 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/att_service.dart';
 import '../theme/app_theme.dart';
+import '../utils/app_version.dart';
+import '../utils/responsive.dart';
 import '../widgets/home_card.dart';
-import 'debug_user_mode_screen.dart';
 import 'reminders_screen.dart';
 import 'water_screen.dart';
 import 'meals_screen.dart';
@@ -14,8 +15,22 @@ import 'custom_reminders_screen.dart';
 import 'measurements_screen.dart';
 import 'results_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // App Tracking Transparency (iOS 14+): pede permissão após o usuário ver a Home
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AttService.requestTrackingIfNeeded();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,26 +44,15 @@ class HomeScreen extends StatelessWidget {
           children: [
             Image.asset(
               'assets/icon/icon.png',
-              height: 32,
+              height: responsiveSize(context, compact: 32, expanded: 48),
               fit: BoxFit.contain,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: responsiveSize(context, compact: 10, expanded: 14)),
             const Text('RotinaFit'),
           ],
         ),
         actions: [
-          if (kDebugMode)
-            IconButton(
-              icon: const Icon(Icons.science_outlined),
-              tooltip: 'Trocar modo de teste (Free/Premium)',
-              onPressed: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const DebugUserModeScreen(),
-                ),
-              ),
-            ),
           IconButton(
             icon: const Icon(Icons.notifications_active_outlined),
             onPressed: () => Navigator.push(
@@ -223,8 +227,8 @@ class HomeScreen extends StatelessWidget {
                             HomeCard(
                               emoji: '⭐',
                               icon: Icons.workspace_premium_rounded,
-                              title: 'Conheça o Premium',
-                              subtitle: 'Sem anúncios, histórico completo e gráficos. R\$ 5,90/mês ou R\$ 49,90/ano.',
+                              title: 'Assinar Premium',
+                              subtitle: 'Sem anúncios + recursos completos',
                               accentColor: AppTheme.lockPremium,
                               onTap: () => Navigator.push(
                                 context,
@@ -235,6 +239,15 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: 24),
+                          Center(
+                            child: Text(
+                              'Versão $appVersion',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
                         ]),
                       ),
                     ),

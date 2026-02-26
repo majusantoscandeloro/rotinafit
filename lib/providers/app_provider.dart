@@ -10,6 +10,9 @@ import '../services/storage_service.dart';
 import '../services/firestore_service.dart';
 import '../services/notifications_service.dart';
 import '../services/ads_service.dart';
+import '../services/iap_service.dart';
+import '../services/verify_purchase_service.dart';
+import '../repositories/premium_repository.dart';
 
 enum Plan { free, premium }
 
@@ -19,6 +22,8 @@ const int freePlanMaxCustomReminders = 1;
 class AppProvider extends ChangeNotifier {
   final StorageService _storage = StorageService();
   final AdsService _ads = AdsService();
+  final IapService _iap = IapService();
+  late final PremiumRepository _premiumRepo = PremiumRepository(storage: _storage);
   FirestoreService? _firestore;
   String? _lastLoadedUid;
   StreamSubscription<User?>? _authSubscription;
@@ -48,6 +53,7 @@ class AppProvider extends ChangeNotifier {
   bool get isPremium => _isPremium;
   bool get loading => _loading;
   bool get showAds => _ads.showAds;
+  IapService get iap => _iap;
 
   /// Plano free: máximo 1 lembrete personalizado. Premium: ilimitado.
   bool get canAddCustomReminder {
@@ -157,7 +163,17 @@ class AppProvider extends ChangeNotifier {
       _reminders = await _firestore!.getRemindersConfig();
       _customReminders = await _firestore!.getCustomReminders();
       _waterProgress = await _firestore!.getWaterProgress();
-      _isPremium = await _firestore!.isPremium();
+      final premiumStatus = await _premiumRepo.getPremiumStatus(_firestore);
+      _isPremium = premiumStatus.isPremium;
+      if (premiumStatus.isPremium &&
+          premiumStatus.premiumUntil != null &&
+          premiumStatus.premiumUntil!.isNotEmpty) {
+        final until = DateTime.tryParse(premiumStatus.premiumUntil!);
+        if (until != null && DateTime.now().isAfter(until)) {
+          await _premiumRepo.setPremium(_firestore, false);
+          _isPremium = false;
+        }
+      }
       _imcFreeViewedMonth = await _firestore!.getImcFreeViewedMonth();
       _bodyFatUnlockedUntil = await _firestore!.getBodyFatUnlockedUntil();
       _waterGoalChangeDate = await _firestore!.getWaterGoalChangeDate();
@@ -167,7 +183,17 @@ class AppProvider extends ChangeNotifier {
       _reminders = await _storage.getRemindersConfig();
       _customReminders = await _storage.getCustomReminders();
       _waterProgress = await _storage.getWaterProgress();
-      _isPremium = await _storage.isPremium();
+      final premiumStatus = await _premiumRepo.getPremiumStatus(null);
+      _isPremium = premiumStatus.isPremium;
+      if (premiumStatus.isPremium &&
+          premiumStatus.premiumUntil != null &&
+          premiumStatus.premiumUntil!.isNotEmpty) {
+        final until = DateTime.tryParse(premiumStatus.premiumUntil!);
+        if (until != null && DateTime.now().isAfter(until)) {
+          await _premiumRepo.setPremium(null, false);
+          _isPremium = false;
+        }
+      }
       _imcFreeViewedMonth = await _storage.getImcFreeViewedMonth();
       _bodyFatUnlockedUntil = await _storage.getBodyFatUnlockedUntil();
       _waterGoalChangeDate = await _storage.getWaterGoalChangeDate();
@@ -178,7 +204,16 @@ class AppProvider extends ChangeNotifier {
       await _ads.init();
     } catch (_) {}
     _ads.updateShowAds(_isPremium);
-    _ads.loadInterstitial();
+    _iap.onPremiumGranted = _onPremiumGranted;
+    try {
+      await _iap.init();
+      final lastRestore = await _storage.getLastRestoreAtMs();
+      const throttleMs = 24 * 60 * 60 * 1000;
+      if (lastRestore == null || (DateTime.now().millisecondsSinceEpoch - lastRestore) > throttleMs) {
+        await _storage.setLastRestoreAtMs(DateTime.now().millisecondsSinceEpoch);
+        _iap.restorePurchases();
+      }
+    } catch (_) {}
     try {
       await NotificationsService.init();
       if (_reminders.notificationsEnabled) {
@@ -361,24 +396,43 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _onPremiumGranted(PremiumGrantResult result) {
+    if (!result.isPremium) return;
+    _premiumRepo.setPremiumFromPurchase(
+      _firestore,
+      isPremium: true,
+      productId: result.productId,
+      purchaseId: result.purchaseId,
+      platform: result.platform,
+    ).then((_) async {
+      _isPremium = true;
+      _ads.updateShowAds(false);
+      notifyListeners();
+      final uid = _firestore?.uid ?? FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null &&
+          result.serverVerificationData != null &&
+          result.serverVerificationData!.isNotEmpty &&
+          result.productId != null &&
+          result.platform != null) {
+        await VerifyPurchaseService.verifyWithBackend(
+          uid: uid,
+          serverVerificationData: result.serverVerificationData!,
+          productId: result.productId!,
+          purchaseId: result.purchaseId,
+          platform: result.platform!,
+        );
+        notifyListeners();
+      }
+    }).catchError((e) {
+      if (kDebugMode) debugPrint('AppProvider _onPremiumGranted persist error: $e');
+    });
+  }
+
   Future<void> setPremium(bool value) async {
     _isPremium = value;
-    if (_firestore != null) {
-      await _firestore!.setPremium(value);
-    } else {
-      await _storage.setPremium(value);
-    }
+    await _premiumRepo.setPremium(_firestore, value);
     _ads.updateShowAds(_isPremium);
     notifyListeners();
-  }
-
-  Future<void> showInterstitialOnSave() async {
-    await _ads.showInterstitialOnSave();
-  }
-
-  /// Exibe intersticial (ex.: ao calcular % gordura). Retorna quando o anúncio for fechado.
-  Future<void> showInterstitial() async {
-    await _ads.showInterstitial();
   }
 
   /// Exibe anúncio em vídeo (rewarded). [forBodyFat] = BodyFat, [forCustomReminder] = CustomReminder, senão = WaterGoal. Retorna true se assistiu até o fim.
@@ -386,13 +440,10 @@ class AppProvider extends ChangeNotifier {
     return _ads.showRewardedAd(forBodyFat: forBodyFat, forCustomReminder: forCustomReminder);
   }
 
-  void loadInterstitial() {
-    _ads.loadInterstitial();
-  }
-
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _iap.dispose();
     super.dispose();
   }
 }

@@ -2,13 +2,16 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'providers/app_provider.dart';
 import 'providers/auth_provider.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/notifications_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,12 +19,17 @@ void main() async {
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
   ]);
-  await Firebase.initializeApp();
-  runApp(const RotinaFitApp());
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Garante que as fontes do tema estejam carregadas antes do primeiro frame
+  await GoogleFonts.pendingFonts();
+  final navigatorKey = GlobalKey<NavigatorState>();
+  NotificationsService.navigatorKey = navigatorKey;
+  runApp(RotinaFitApp(navigatorKey: navigatorKey));
 }
 
 class RotinaFitApp extends StatelessWidget {
-  const RotinaFitApp({super.key});
+  const RotinaFitApp({super.key, this.navigatorKey});
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +39,7 @@ class RotinaFitApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AppProvider()..load()),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'RotinaFit',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
@@ -58,11 +67,14 @@ class _AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        if (auth.user == null) return const LoginScreen();
-        return const HomeScreen();
-      },
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          if (auth.user == null) return const LoginScreen();
+          return const HomeScreen();
+        },
+      ),
     );
   }
 }

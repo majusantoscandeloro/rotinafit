@@ -50,7 +50,7 @@ class DebugUserModeScreen extends StatelessWidget {
               _ModeCard(
                 title: 'Premium',
                 subtitle:
-                    'Sem anúncios, histórico completo, gráficos e comparação mês a mês. R\$ 5,90/mês ou R\$ 49,90/ano.',
+                    'Sem anúncios, histórico completo, gráficos e comparação mês a mês. Assinatura mensal ou anual.',
                 icon: Icons.star,
                 color: AppTheme.lockPremium,
                 onTap: () => _selectMode(context, premium: true),

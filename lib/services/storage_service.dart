@@ -11,6 +11,7 @@ class StorageService {
   static const _keyCustomReminders = 'rotinafit_custom_reminders';
   static const _keyWater = 'rotinafit_water';
   static const _keyPremium = 'rotinafit_premium';
+  static const _keyLastRestoreAt = 'rotinafit_last_restore_at_ms';
   static const _keyImcFreeViewedMonth = 'rotinafit_imc_free_viewed_month';
   static const _keyBodyFatUnlockedUntil = 'rotinafit_body_fat_unlocked_until';
   static const _keyWaterGoalChangeDate = 'rotinafit_water_goal_change_date';
@@ -88,6 +89,17 @@ class StorageService {
   Future<void> setPremium(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_keyPremium, value);
+  }
+
+  /// Timestamp (ms since epoch) da última chamada a restorePurchases. Usado para throttle 24h.
+  Future<int?> getLastRestoreAtMs() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyLastRestoreAt);
+  }
+
+  Future<void> setLastRestoreAtMs(int ms) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyLastRestoreAt, ms);
   }
 
   Future<String?> getImcFreeViewedMonth() async {

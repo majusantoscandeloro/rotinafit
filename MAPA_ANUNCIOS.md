@@ -14,7 +14,7 @@ Auditoria dos anúncios (AdMob / Google Mobile Ads) no app.
 | **Rewarded** | Medidas (calcular % gordura) | `lib/screens/measurements_screen.dart:112` | Ao tocar em "Assistir vídeo e liberar" no diálogo "Ver percentual de gordura" | Debug: teste | Android **9595838580** · iOS **1661508248** (RotinaFit_Rewarded_BodyFat) | Quando `canViewBodyFatWithoutAd == false`. Recompensa: desbloqueio por 24h (`unlockBodyFatFor24Hours`). |
 | **Rewarded** | Lembretes personalizados (criar) | `lib/screens/custom_reminders_screen.dart:79` | Ao tocar em "Criar lembrete" quando já tem 1 lembrete (plano free) | Debug: teste | Android **4020078277** · iOS **2191991286** (RotinaFit_Rewarded_CustomReminder) | `mustWatchAdToAddCustomReminder == true`. Assistir até o fim para abrir o formulário de criação. |
 
-**Intersticial:** o `AdsService` possui `loadInterstitial()`, `showInterstitial()` e `showInterstitialOnSave()`, mas **nenhuma tela chama esses métodos**. Nenhum intersticial está em uso no app atualmente. IDs de teste disponíveis para uso futuro: Android `ca-app-pub-3940256099942544/1033173712`, iOS `ca-app-pub-3940256099942544/4411468910`.
+**Intersticial:** removido do app. Não há anúncio intersticial em uso (apenas Banner e Rewarded).
 
 **App ID (plataforma):**
 
@@ -25,7 +25,7 @@ Auditoria dos anúncios (AdMob / Google Mobile Ads) no app.
 
 **Onde estão os IDs:**
 
-- **Ad Unit IDs:** `lib/services/ads_service.dart` (Banner, Interstitial, Rewarded; Android e iOS com sufixos diferentes).
+- **Ad Unit IDs:** `lib/services/ads_service.dart` (Banner, Rewarded; Android e iOS com sufixos diferentes).
 - **App ID Android:** `android/app/src/main/AndroidManifest.xml`.
 - **App ID iOS:** `ios/Runner/Info.plist` (GADApplicationIdentifier + SKAdNetworkItems).
 - **Android e iOS:** Banner e os três Rewarded têm IDs de produção em `ads_service.dart`; App IDs em `AndroidManifest.xml` (Android) e `Info.plist` (iOS). Em debug, todos usam IDs de teste.
@@ -42,12 +42,12 @@ Auditoria dos anúncios (AdMob / Google Mobile Ads) no app.
 ### 2) Banner
 
 - **Implementação atual:** banner é criado uma vez em cache (`getOrCreateBannerAd()`), reutilizado em `getBannerWidget()` e exibido na Home com `AdWidget`. Dispose em `AdsService.dispose()`. Sem vazamento.
-- **Intersticial não usado:** o código de intersticial existe mas não é chamado por nenhuma tela. Se quiser usar (ex.: após salvar check-in de medidas), chamar `app.showInterstitialOnSave()` no fluxo desejado; caso contrário pode ignorar ou remover no futuro.
+- **Intersticial:** removido; o app usa apenas Banner e Rewarded.
 
 ### 3) Inicialização e lifecycle
 
 - **MobileAds.initialize():** chamado em `AdsService.init()` (por sua vez em `AppProvider.load()`). OK.
-- **Dispose:** `AdsService.dispose()` existe e faz dispose de banner, intersticial e rewarded. Se o `AppProvider` for descartado (ex.: logout ou encerramento), recomenda-se chamar `_ads.dispose()` no dispose do provider.
+- **Dispose:** `AdsService.dispose()` existe e faz dispose de banner e rewarded. Se o `AppProvider` for descartado (ex.: logout ou encerramento), recomenda-se chamar `_ads.dispose()` no dispose do provider.
 
 ### 4) UX
 
@@ -73,13 +73,13 @@ Auditoria dos anúncios (AdMob / Google Mobile Ads) no app.
 
 - **Banner:** `RotinaFit_Banner_Home`
 - **Rewarded:** `RotinaFit_Rewarded_WaterGoal` (água), `RotinaFit_Rewarded_BodyFat` (% gordura), `RotinaFit_Rewarded_CustomReminder` (lembretes personalizados)
-- **Interstitial (se passar a usar):** ex. `RotinaFit_Interstitial_Medidas` (ex.: após salvar check-in)
+- **Interstitial:** não utilizado no app.
 
 Assim fica fácil identificar no AdMob onde cada unidade é usada.
 
 ### 3) Checklist antes de publicar
 
-1. Criar no AdMob o app e as unidades (Banner, Rewarded; Interstitial se for usar).
+1. Criar no AdMob o app e as unidades (Banner, Rewarded).
 2. Substituir em `ads_service.dart` os Ad Unit IDs de teste pelos de produção (por plataforma).
 3. Substituir no `AndroidManifest.xml` o `APPLICATION_ID` pelo App ID de produção.
 4. Substituir no `Info.plist` o `GADApplicationIdentifier` pelo App ID de produção do iOS.
@@ -92,7 +92,7 @@ Assim fica fácil identificar no AdMob onde cada unidade é usada.
 | Tipo      | Em uso? | Onde |
 |-----------|--------|------|
 | Banner    | Sim    | Home (rodapé) |
-| Interstitial | Não | Nenhuma tela |
+| Interstitial | Removido | — |
 | Rewarded  | Sim    | Água (meta), Medidas (% gordura), Lembretes personalizados (criar) |
 
 *Documento atualizado conforme o código em 11/02/2025.*

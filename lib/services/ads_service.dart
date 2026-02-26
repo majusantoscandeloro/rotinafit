@@ -14,8 +14,6 @@ String get _bannerAdUnitId {
   if (kDebugMode) return 'ca-app-pub-3940256099942544/6300978111'; // teste Android
   return 'ca-app-pub-7050795334686713/9711388654'; // RotinaFit_Banner_Home (Android produção)
 }
-String get _interstitialAdUnitId =>
-    Platform.isIOS ? 'ca-app-pub-3940256099942544/4411468910' : 'ca-app-pub-3940256099942544/1033173712';
 /// Rewarded água: produção RotinaFit_Rewarded_WaterGoal; debug usa teste.
 String get _rewardedWaterGoalAdUnitId {
   if (Platform.isIOS) {
@@ -44,13 +42,12 @@ String get _rewardedCustomReminderAdUnitId {
   return 'ca-app-pub-7050795334686713/4020078277'; // RotinaFit_Rewarded_CustomReminder (Android produção)
 }
 
-/// Serviço de anúncios. Banner, intersticial e rewarded (vídeo para ganhar recompensa).
+/// Serviço de anúncios. Banner e rewarded (vídeo para ganhar recompensa).
 /// Free = com anúncios; Premium = sem anúncios.
 class AdsService {
   final StorageService _storage = StorageService();
 
   BannerAd? _bannerAd;
-  InterstitialAd? _interstitialAd;
   RewardedAd? _rewardedWaterAd;
   RewardedAd? _rewardedBodyFatAd;
   RewardedAd? _rewardedCustomReminderAd;
@@ -58,10 +55,12 @@ class AdsService {
 
   bool get showAds => _showAds;
 
+  /// Premium = sem anúncios: não inicializa SDK nem carrega nenhum ad (banner/rewarded).
   Future<void> init() async {
-    await MobileAds.instance.initialize();
     final premium = await _storage.isPremium();
     _showAds = !premium;
+    if (premium) return;
+    await MobileAds.instance.initialize();
     loadRewardedWaterAd();
     loadRewardedBodyFatAd();
     loadRewardedCustomReminderAd();
@@ -96,18 +95,6 @@ class AdsService {
       width: ad.size.width.toDouble(),
       height: ad.size.height.toDouble(),
       child: AdWidget(ad: ad),
-    );
-  }
-
-  void loadInterstitial() {
-    if (!_showAds) return;
-    InterstitialAd.load(
-      adUnitId: _interstitialAdUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) => _interstitialAd = ad,
-        onAdFailedToLoad: (_) {},
-      ),
     );
   }
 
@@ -179,21 +166,8 @@ class AdsService {
     return completer.future;
   }
 
-  /// Exibe o intersticial (ex.: ao salvar ou ao calcular % gordura). Retorna quando o anúncio for fechado.
-  Future<void> showInterstitial() async {
-    if (!_showAds || _interstitialAd == null) return;
-    await _interstitialAd!.show();
-    _interstitialAd = null;
-    loadInterstitial(); // pré-carrega próximo
-  }
-
-  Future<void> showInterstitialOnSave() async {
-    await showInterstitial();
-  }
-
   void dispose() {
     _bannerAd?.dispose();
-    _interstitialAd?.dispose();
     _rewardedWaterAd?.dispose();
     _rewardedBodyFatAd?.dispose();
     _rewardedCustomReminderAd?.dispose();

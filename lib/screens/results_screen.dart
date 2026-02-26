@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import '../models/body_measurements.dart';
 import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
+import '../services/iap_service.dart';
 import '../utils/evolution_config.dart';
+import '../utils/responsive.dart';
 import 'measurements_screen.dart';
 
 class ResultsScreen extends StatelessWidget {
@@ -376,7 +378,7 @@ class _EvolutionSectionState extends State<_EvolutionSection> {
             const SizedBox(height: 16),
             if (!_showTextView)
               SizedBox(
-                height: 220,
+                height: responsiveSize(context, compact: 220, expanded: 320),
                 child: _SingleMeasureLineChart(
                   measureId: _effectiveMeasureId(),
                   measurements: widget.measurements,
@@ -1046,88 +1048,206 @@ class HistoryScreen extends StatelessWidget {
   }
 }
 
-class PremiumScreen extends StatelessWidget {
+class PremiumScreen extends StatefulWidget {
   const PremiumScreen({super.key});
 
   @override
+  State<PremiumScreen> createState() => _PremiumScreenState();
+}
+
+class _PremiumScreenState extends State<PremiumScreen> {
+  bool _purchasing = false;
+  String? _errorMessage;
+
+  Future<void> _loadProducts() async {
+    setState(() => _errorMessage = null);
+    await context.read<AppProvider>().iap.loadProducts();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProducts());
+  }
+
+  Future<void> _purchase(String productId) async {
+    final app = context.read<AppProvider>();
+    if (!app.iap.isAvailable) {
+      setState(() => _errorMessage = 'Compras não disponíveis neste dispositivo.');
+      return;
+    }
+    setState(() {
+      _purchasing = true;
+      _errorMessage = null;
+    });
+    final ok = await app.iap.purchase(productId);
+    if (mounted) {
+      setState(() => _purchasing = false);
+      if (!ok) {
+        setState(() => _errorMessage = 'Não foi possível iniciar a compra. Tente novamente.');
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Image.asset(
-              'assets/icon/icon.png',
-              height: 28,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    return Consumer<AppProvider>(
+      builder: (context, app, _) {
+        if (app.isPremium) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Premium ativado!')),
+              );
+              Navigator.of(context).pop();
+            }
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final iap = app.iap;
+        final monthly = iap.monthlyProduct;
+        final yearly = iap.yearlyProduct;
+        final loading = iap.products.isEmpty && iap.loadError == null && iap.isAvailable;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/icon/icon.png',
+                  height: responsiveSize(context, compact: 28, expanded: 40),
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
+                SizedBox(width: responsiveSize(context, compact: 8, expanded: 12)),
+                const Text('RotinaFit Premium'),
+              ],
             ),
-            const SizedBox(width: 8),
-            const Text('RotinaFit Premium'),
-          ],
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.star, color: AppTheme.lockPremium, size: 40),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'O que é o Premium?',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: AppTheme.lockPremium, size: 40),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'O que é o Premium?',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'O RotinaFit tem dois planos:\n\n'
+                        '• Free (grátis): uso completo dos lembretes, água, medidas e IMC, com anúncios. '
+                        'Histórico e gráficos têm preview limitado.\n\n'
+                        '• Premium (assinatura): sem anúncios e com tudo liberado — histórico mês a mês ilimitado, '
+                        'comparação automática (ex: Cintura -2 cm), gráficos de evolução e percentual de gordura sempre visível.',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'O RotinaFit tem dois planos:\n\n'
-                    '• Free (grátis): uso completo dos lembretes, água, medidas e IMC, com anúncios. '
-                    'Histórico e gráficos têm preview limitado.\n\n'
-                    '• Premium (assinatura): sem anúncios e com tudo liberado — histórico mês a mês ilimitado, '
-                    'comparação automática (ex: Cintura -2 cm), gráficos de evolução e percentual de gordura sempre visível.',
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Valor',
-                    style: Theme.of(context).textTheme.titleMedium,
+              const SizedBox(height: 12),
+              if (_errorMessage != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Material(
+                    color: Theme.of(context).colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onErrorContainer),
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  const Text('R\$ 5,90 por mês ou R\$ 49,90 por ano (melhor custo-benefício).'),
-                  const SizedBox(height: 16),
-                  OutlinedButton(
-                    onPressed: () {
-                      // TODO: in_app_purchase - assinatura
-                      context.read<AppProvider>().setPremium(true);
-                      Navigator.pop(context);
-                    },
-                    child: const Text('Ativar Premium (simulado)'),
+                ),
+              ],
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Assinatura',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      if (loading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (!iap.isAvailable)
+                        const Text(
+                          'Compras in-app não estão disponíveis (por exemplo, em emulador ou dispositivo não configurado).',
+                        )
+                      else ...[
+                        if (monthly != null || yearly != null) ...[
+                          if (monthly != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: FilledButton.icon(
+                                onPressed: _purchasing ? null : () => _purchase(kProductIdMonthly),
+                                icon: _purchasing
+                                    ? const SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      )
+                                    : const Icon(Icons.payment),
+                                label: Text('${monthly.price} / mês'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  backgroundColor: AppTheme.lockPremium,
+                                ),
+                              ),
+                            ),
+                          if (yearly != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: FilledButton.icon(
+                                onPressed: _purchasing ? null : () => _purchase(kProductIdYearly),
+                                icon: _purchasing
+                                    ? const SizedBox.shrink()
+                                    : const Icon(Icons.star),
+                                label: Text('${yearly.price} / ano (melhor custo-benefício)'),
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  backgroundColor: AppTheme.lockPremium,
+                                ),
+                              ),
+                            ),
+                        ] else
+                          const Text(
+                            'Assinatura mensal ou anual. '
+                            'Configure os produtos na Play Store e na App Store para ver os preços.',
+                          ),
+                      ],
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

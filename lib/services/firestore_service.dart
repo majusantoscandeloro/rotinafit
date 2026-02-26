@@ -92,12 +92,84 @@ class FirestoreService {
     await _userRef!.collection('config').doc('preferences').set(prefs, SetOptions(merge: true));
   }
 
+  /// Campos de premium no documento do usuário (users/{uid}).
+  static const String _userFieldIsPremium = 'isPremium';
+  static const String _userFieldPremiumUntil = 'premiumUntil';
+  static const String _userFieldProductId = 'productId';
+  static const String _userFieldPurchaseId = 'purchaseId';
+  static const String _userFieldPlatform = 'platform';
+  static const String _userFieldPremiumUpdatedAt = 'premiumUpdatedAt';
+
+  /// Lê isPremium e premiumUntil do documento do usuário.
+  /// Retorna null se não houver dados de premium no user doc.
+  Future<({bool isPremiumFlag, String? premiumUntil})?> getPremiumFields() async {
+    if (_userRef == null) return null;
+    final snap = await _userRef!.get();
+    final data = snap.data();
+    if (data == null || !data.containsKey(_userFieldIsPremium)) return null;
+    final flag = data[_userFieldIsPremium] as bool? ?? false;
+    final until = data[_userFieldPremiumUntil] as String?;
+    return (isPremiumFlag: flag, premiumUntil: until);
+  }
+
+  /// isPremium efetivo: flag true E (premiumUntil == null OU now < premiumUntil).
+  /// Assinatura expirada (now >= premiumUntil) retorna false.
   Future<bool> isPremium() async {
+    final fields = await getPremiumFields();
+    if (fields != null) {
+      if (!fields.isPremiumFlag) return false;
+      if (fields.premiumUntil == null || fields.premiumUntil!.isEmpty) return true;
+      final until = DateTime.tryParse(fields.premiumUntil!);
+      if (until != null && DateTime.now().isAfter(until)) return false;
+      return true;
+    }
     final p = await _getPreferences();
     return p['premium'] as bool? ?? false;
   }
 
+  /// Salva status premium completo no documento do usuário e em config/preferences (retrocompat).
+  Future<void> setPremiumFromPurchase({
+    required bool isPremium,
+    String? premiumUntil,
+    String? productId,
+    String? purchaseId,
+    String? platform,
+  }) async {
+    if (_userRef == null) return;
+    final now = FieldValue.serverTimestamp();
+    final userData = <String, dynamic>{
+      _userFieldIsPremium: isPremium,
+      _userFieldPremiumUpdatedAt: now,
+    };
+    if (isPremium) {
+      if (premiumUntil != null) userData[_userFieldPremiumUntil] = premiumUntil;
+      if (productId != null) userData[_userFieldProductId] = productId;
+      if (purchaseId != null) userData[_userFieldPurchaseId] = purchaseId;
+      if (platform != null) userData[_userFieldPlatform] = platform;
+    } else {
+      userData[_userFieldPremiumUntil] = null;
+      userData[_userFieldProductId] = null;
+      userData[_userFieldPurchaseId] = null;
+      userData[_userFieldPlatform] = null;
+    }
+    await _userRef!.set(userData, SetOptions(merge: true));
+    await _savePreferences({'premium': isPremium});
+  }
+
   Future<void> setPremium(bool value) async {
+    if (_userRef != null) {
+      final data = <String, dynamic>{
+        _userFieldIsPremium: value,
+        _userFieldPremiumUpdatedAt: FieldValue.serverTimestamp(),
+      };
+      if (!value) {
+        data[_userFieldPremiumUntil] = null;
+        data[_userFieldProductId] = null;
+        data[_userFieldPurchaseId] = null;
+        data[_userFieldPlatform] = null;
+      }
+      await _userRef!.set(data, SetOptions(merge: true));
+    }
     await _savePreferences({'premium': value});
   }
 

@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest_all.dart' as tz_data;
 import '../models/custom_reminder.dart';
 import '../models/reminders_config.dart';
+import '../screens/water_screen.dart';
 
 class NotificationsService {
   static final FlutterLocalNotificationsPlugin _plugin =
@@ -11,6 +13,10 @@ class NotificationsService {
   static FlutterLocalNotificationsPlugin get plugin => _plugin;
 
   static bool _initialized = false;
+
+  /// Chave do navigator para abrir telas ao toque na notificação (definida no main).
+  static GlobalKey<NavigatorState>? _navigatorKey;
+  static set navigatorKey(GlobalKey<NavigatorState>? key) => _navigatorKey = key;
 
   /// Detalhes para notificações agendadas no iOS (alert, som, badge).
   static const DarwinNotificationDetails _iosDetails = DarwinNotificationDetails(
@@ -24,6 +30,7 @@ class NotificationsService {
     tz_data.initializeTimeZones();
     tz.setLocalLocation(tz.getLocation('America/Sao_Paulo'));
 
+    // Usa o mesmo ícone do app (ic_launcher = rotinafitsemicone.png via flutter_launcher_icons)
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -34,12 +41,47 @@ class NotificationsService {
       onDidReceiveNotificationResponse: _onSelect,
     );
 
+    // Quando o app é aberto pelo toque na notificação (app estava fechado), o callback
+    // onDidReceiveNotificationResponse às vezes não é chamado; usamos os launch details.
+    final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+    if (launchDetails?.didNotificationLaunchApp == true) {
+      final payload = launchDetails!.notificationResponse?.payload;
+      if (payload != null && payload.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _navigateToWaterIfPayload(payload);
+        });
+      }
+    }
+
     await _requestPermissions();
     _initialized = true;
   }
 
   static void _onSelect(NotificationResponse? response) {
-    // Pode abrir tela específica se quiser
+    _navigateToWaterIfPayload(response?.payload);
+  }
+
+  /// Abre a tela de Água (só navegação, sem +1 copo).
+  static void _navigateToWater() {
+    final key = _navigatorKey;
+    if (key?.currentState?.context == null) return;
+    try {
+      key!.currentState!.push(
+        MaterialPageRoute(builder: (_) => const WaterScreen()),
+      );
+    } catch (_) {}
+  }
+
+  static void _navigateToWaterIfPayload(String? payload) {
+    if (payload == null || payload.isEmpty || payload != 'water') return;
+    final key = _navigatorKey;
+    if (key == null) return;
+    if (key.currentState?.context != null) {
+      _navigateToWater();
+    } else {
+      // App pode ter acabado de abrir; tenta de novo no próximo frame.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _navigateToWater());
+    }
   }
 
   static Future<void> _requestPermissions() async {
@@ -90,6 +132,7 @@ class NotificationsService {
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'water',
       );
     }
   }

@@ -1,12 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
-import 'debug_user_mode_screen.dart';
+import '../utils/responsive.dart';
 import 'home_screen.dart';
 
 /// Tela de login e registro com e-mail/senha (Firebase Auth).
@@ -151,8 +150,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Image.asset(
-                    'assets/icon/icon.png',
-                    height: 88,
+                    'assets/icon/rotinafitsemicone.png',
+                    height: responsiveSize(context, compact: 140, expanded: 200),
                     fit: BoxFit.contain,
                     errorBuilder: (_, __, ___) => Text(
                       'RotinaFit',
@@ -291,21 +290,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           : 'Não tenho conta. Criar conta',
                     ),
                   ),
-                  if (kDebugMode) ...[
-                    const SizedBox(height: 24),
-                    TextButton.icon(
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const DebugUserModeScreen(),
-                        ),
-                      ),
-                      icon: const Icon(Icons.bug_report_outlined, size: 18),
-                      label: const Text('Modo desenvolvedor (testar Free/Premium sem login)'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: theme.colorScheme.outline,
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),

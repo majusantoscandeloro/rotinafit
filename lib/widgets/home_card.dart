@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
 
 class HomeCard extends StatelessWidget {
   const HomeCard({
@@ -59,18 +60,18 @@ class HomeCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: responsiveSize(context, compact: 52, expanded: 72),
+                    height: responsiveSize(context, compact: 52, expanded: 72),
                     decoration: BoxDecoration(
                       color: accent.withValues(alpha:0.12),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     alignment: Alignment.center,
                     child: icon != null
-                        ? Icon(icon, size: 26, color: accent)
-                        : Text(emoji, style: const TextStyle(fontSize: 26)),
+                        ? Icon(icon, size: responsiveSize(context, compact: 26, expanded: 36), color: accent)
+                        : Text(emoji, style: TextStyle(fontSize: responsiveSize(context, compact: 26, expanded: 36))),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: responsiveSize(context, compact: 16, expanded: 20)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

@@ -26,7 +26,7 @@ android {
         applicationId = "com.rotinafit.rotinafit"
 
         // ✅ Firebase Auth exige minSdk 23+
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
 
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
